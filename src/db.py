@@ -5,13 +5,15 @@ import pipes
 
 
 class DBHelper:
-    def __init__(self, path):
+    def __init__(self, path, termux=False):
         self.path = path
+        self.termux = termux
 
     def query(self, query):
         cmd = f'sqlite3 -csv -header {self.path} {pipes.quote(query)}'
         termux_cmd = f'tsudo {cmd}'
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True, shell=True)
+        p = subprocess.Popen(termux_cmd if self.termux else cmd, stdout=subprocess.PIPE, universal_newlines=True,
+                             shell=True)
         sqlite_out, sqlite_stderr = p.communicate()
         reader = csv.DictReader(sqlite_out.split("\n"))
         return list(reader)
