@@ -1,5 +1,7 @@
 import json
+import threading
 import time
+from datetime import datetime
 
 import vk_api
 from vk_api.longpoll import VkEventType, VkLongPoll
@@ -21,7 +23,44 @@ KEYB = {
     'empty':           [json.dumps({'buttons': [], 'one_time': True}), '']
 }
 
+# DB = DBHelper('../examples/mmssms.db')
 DB = DBHelper()
+
+
+def on_new_messages(vk, new_msg, send_after=True):
+    if len(new_msg) == 0:
+        vk.messages.send(
+            user_id=ADMIN_ID,
+            random_id=get_random_id(),
+            message='Пока ничего нового',
+            keyboard=KEYB['main_inline'][0]
+        )
+    else:
+        for msg in new_msg:
+            vk.messages.send(
+                user_id=ADMIN_ID,
+                random_id=get_random_id(),
+                message=f'{msg["address"]} от {datetime.utcfromtimestamp(int(msg["date"]) // 1000).strftime("%d.%m %H:%M")}\n{msg["body"]}'
+            )
+
+        DB.read_all_messages()
+
+        if send_after:
+            vk.messages.send(
+                user_id=ADMIN_ID,
+                random_id=get_random_id(),
+                message="Пока ничего нового",
+                keyboard=KEYB['main_inline'][0]
+            )
+
+
+def checker_thread(vk):
+    while True:
+        new_msg = DB.get_unread_messages()
+        if len(new_msg) != 0:
+            on_new_messages(vk, new_msg, send_after=False)
+        else:
+            time.sleep(10)
 
 
 def main():
@@ -49,6 +88,9 @@ def main():
         keyboard=KEYB['main_inline'][0]
     )
 
+    thread_checker = threading.Thread(target=checker_thread, args=(vk,), daemon=True)
+    thread_checker.start()
+
     for event in longpoll.listen():
         if event.type == VkEventType.MESSAGE_NEW and event.to_me and event.text:
             if event.peer_id == ADMIN_ID:
@@ -65,7 +107,7 @@ def main():
 
                     for msg in last_msg:
                         text = '🆕 ' if msg['read'] == '0' else '✉ '
-                        text += f'Сообщение от {msg["address"]}:\n{msg["body"]}'
+                        text += f'{msg["address"]} от {datetime.utcfromtimestamp(int(msg["date"]) // 1000).strftime("%d.%m %H:%M")}\n{msg["body"]}'
                         vk.messages.send(
                             user_id=ADMIN_ID,
                             random_id=get_random_id(),
@@ -82,29 +124,7 @@ def main():
                 elif event.text == KEYB['main_inline'][1][2]:
                     # New
                     new_msg = DB.get_unread_messages()
-                    if len(new_msg) == 0:
-                        vk.messages.send(
-                            user_id=ADMIN_ID,
-                            random_id=get_random_id(),
-                            message='Пока ничего нового',
-                            keyboard=KEYB['main_inline'][0]
-                        )
-                    else:
-                        for msg in new_msg:
-                            vk.messages.send(
-                                user_id=ADMIN_ID,
-                                random_id=get_random_id(),
-                                message=f'Сообщение от {msg["address"]}:\n{msg["body"]}'
-                            )
-
-                        DB.read_all_messages()
-
-                        vk.messages.send(
-                            user_id=ADMIN_ID,
-                            random_id=get_random_id(),
-                            message="Пока ничего нового",
-                            keyboard=KEYB['main_inline'][0]
-                        )
+                    on_new_messages(vk, new_msg)
 
 
 if __name__ == '__main__':
@@ -112,5 +132,5 @@ if __name__ == '__main__':
         try:
             main()
         except Exception as e:
-            pass
-        time.sleep(15)
+            print(repr(e))
+        time.sleep(5)
