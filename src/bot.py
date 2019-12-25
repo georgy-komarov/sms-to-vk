@@ -21,7 +21,7 @@ KEYB = {
     'empty':           [json.dumps({'buttons': [], 'one_time': True}), '']
 }
 
-DB = DBHelper('../examples/mmssms.db')
+DB = DBHelper()
 
 
 def main():
