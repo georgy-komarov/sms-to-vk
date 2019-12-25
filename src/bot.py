@@ -1,26 +1,28 @@
 import json
+import subprocess
 import threading
 import time
 from datetime import datetime
 
 import vk_api
+from db import DBHelper
 from vk_api.longpoll import VkEventType, VkLongPoll
 from vk_api.utils import get_random_id
-
-from db import DBHelper
 
 ADMIN_ID = 223712375
 
 KEYB = {
-    'main_inline':     [json.dumps({'inline': False, 'buttons': [[{'action': {'type': 'text', 'label': '📶Ping'}, 'color': 'positive'},
-                                                                  {'action': {'type': 'text', 'label': '⏩Last'}, 'color': 'positive'},
-                                                                  {'action': {'type': 'text', 'label': '🆕'}, 'color': 'positive'}]]}),
-                        ['📶Ping', '⏩Last', '🆕']],
-    'main_inline_old': [json.dumps({'inline': True, 'buttons': [[{'action': {'type': 'text', 'label': '📶Ping'}, 'color': 'positive'},
-                                                                 {'action': {'type': 'text', 'label': '⏩Last'}, 'color': 'positive'},
-                                                                 {'action': {'type': 'text', 'label': '🆕'}, 'color': 'positive'}]]}),
-                        ['📶Ping', '⏩Last', '🆕']],
-    'empty':           [json.dumps({'buttons': [], 'one_time': True}), '']
+    'main_inline': [
+        json.dumps({'inline': False, 'buttons': [[{'action': {'type': 'text', 'label': '📶Ping'}, 'color': 'positive'},
+                                                  {'action': {'type': 'text', 'label': '⏩Last'}, 'color': 'positive'},
+                                                  {'action': {'type': 'text', 'label': '🆕'}, 'color': 'positive'}]]}),
+        ['📶Ping', '⏩Last', '🆕']],
+    'main_inline_old': [
+        json.dumps({'inline': True, 'buttons': [[{'action': {'type': 'text', 'label': '📶Ping'}, 'color': 'positive'},
+                                                 {'action': {'type': 'text', 'label': '⏩Last'}, 'color': 'positive'},
+                                                 {'action': {'type': 'text', 'label': '🆕'}, 'color': 'positive'}]]}),
+        ['📶Ping', '⏩Last', '🆕']],
+    'empty': [json.dumps({'buttons': [], 'one_time': True}), '']
 }
 
 # DB = DBHelper('../examples/mmssms.db')
@@ -127,7 +129,15 @@ def main():
                     on_new_messages(vk, new_msg)
 
 
+def check_instance_num():
+    output = subprocess.check_output("pgrep python", shell=True).decode().strip()
+    print(output)
+    if len(output.split('\n')) != 1:
+        exit(0)
+
+
 if __name__ == '__main__':
+    check_instance_num()
     while True:
         try:
             main()
