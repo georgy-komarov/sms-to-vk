@@ -40,7 +40,7 @@ def on_new_messages(vk, new_msg, send_after=True):
             vk.messages.send(
                 user_id=ADMIN_ID,
                 random_id=get_random_id(),
-                message=f'{msg["address"]} от {datetime.utcfromtimestamp(int(msg["date"]) // 1000).strftime("%d.%m %H:%M")}\n{msg["body"]}'
+                message=f'{msg["address"]} от {datetime.fromtimestamp(int(msg["date"]) // 1000).strftime("%d.%m %H:%M")}\n{msg["body"]}'
             )
 
         DB.read_all_messages()
@@ -107,7 +107,7 @@ def main():
 
                     for msg in last_msg:
                         text = '🆕 ' if msg['read'] == '0' else '✉ '
-                        text += f'{msg["address"]} от {datetime.utcfromtimestamp(int(msg["date"]) // 1000).strftime("%d.%m %H:%M")}\n{msg["body"]}'
+                        text += f'{msg["address"]} от {datetime.fromtimestamp(int(msg["date"]) // 1000).strftime("%d.%m %H:%M")}\n{msg["body"]}'
                         vk.messages.send(
                             user_id=ADMIN_ID,
                             random_id=get_random_id(),
